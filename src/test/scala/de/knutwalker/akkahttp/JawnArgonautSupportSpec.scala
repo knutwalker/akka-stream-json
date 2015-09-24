@@ -18,15 +18,15 @@ package de.knutwalker.akkahttp
 
 import akka.actor.ActorSystem
 import akka.http.scaladsl.marshalling.Marshal
-import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.model.HttpCharsets.`UTF-8`
-import akka.http.scaladsl.model.{HttpEntity, RequestEntity}
+import akka.http.scaladsl.model.MediaTypes.`application/json`
+import akka.http.scaladsl.model.{ HttpEntity, RequestEntity }
 import akka.http.scaladsl.unmarshalling.Unmarshal
-import akka.stream.{Attributes, ActorMaterializer}
-import akka.stream.scaladsl.Source
+import akka.stream.ActorMaterializer
+import akka.stream.scaladsl.{ Keep, Sink, Source }
 import akka.util.ByteString
+import argonaut.Argonaut._
 import argonaut._
-import Argonaut._
 import jawn.ParseException
 import org.specs2.concurrent.ExecutionEnv
 import org.specs2.matcher.FutureMatchers
@@ -50,14 +50,14 @@ object JawnArgonautSupportSpec extends Specification with JawnArgonautSupport wi
   val badJson        = """{"bar":"bar"}"""
   val invalidJson    = """{"bar"="bar"}"""
   val prettyJson     = """
-      |{
-      |  "bar" : "bar",
-      |  "baz" : 42,
-      |  "qux" : [
-      |    true,
-      |    false
-      |  ]
-      |}""".stripMargin.trim
+                         |{
+                         |  "bar" : "bar",
+                         |  "baz" : 42,
+                         |  "qux" : [
+                         |    true,
+                         |    false
+                         |  ]
+                         |}""".stripMargin.trim
 
   implicit val system = ActorSystem()
   implicit val mat    = ActorMaterializer()
@@ -117,17 +117,26 @@ object JawnArgonautSupportSpec extends Specification with JawnArgonautSupport wi
         }
       }
 
-      "A incomplete, lazily streamed json entity" should {
-        val incompleteEntity = mkEntity(incompleteJson)
-        "produce a parse exception with the message 'exhausted input'" >> {
-          Unmarshal(incompleteEntity).to[Foo] must throwA[ParseException]("exhausted input").await
-        }
-      }
-
       "A complete, lazily streamed json entity with superfluous content" should {
         val entity = mkEntity(goodJson + incompleteJson)
         "produce the proper type" >> {
           Unmarshal(entity).to[Foo] must be_===(foo).await
+        }
+      }
+
+      "Multiple, lazily streamed json entities via a flow" should {
+        val entity = mkEntity(goodJson + goodJson + goodJson)
+        "produce all values" >> {
+          val collect = Sink.fold[Vector[Foo], Foo](Vector())(_ :+ _)
+          val parsed = entity.dataBytes.runWith(parse[Foo].toMat(collect)(Keep.right))
+          parsed must be_===(Vector(foo, foo, foo)).await
+        }
+      }
+
+      "A incomplete, lazily streamed json entity" should {
+        val incompleteEntity = mkEntity(incompleteJson)
+        "produce a parse exception with the message 'exhausted input'" >> {
+          Unmarshal(incompleteEntity).to[Foo] must throwA[ParseException]("exhausted input").await
         }
       }
 

@@ -17,7 +17,7 @@
 package de.knutwalker.akka.http.support
 
 import de.knutwalker.akka.http.JsonSupport
-import de.knutwalker.akka.stream.support.circe
+import de.knutwalker.akka.stream.support.CirceStreamSupport
 
 import akka.http.scaladsl.marshalling.{ Marshaller, ToEntityMarshaller }
 import akka.http.scaladsl.model.MediaTypes.`application/json`
@@ -29,15 +29,15 @@ import io.circe.{ Decoder, Encoder, Json, Printer }
 import scala.language.implicitConversions
 
 
-object CirceSupport extends CirceSupport
+object CirceHttpSupport extends CirceHttpSupport
 
-trait CirceSupport extends JsonSupport {
+trait CirceHttpSupport extends JsonSupport {
 
   implicit def circeJsonUnmarshaller: FromEntityUnmarshaller[Json] =
     jsonUnmarshaller[Json]
 
   implicit def circeUnmarshaller[A: Decoder]: FromEntityUnmarshaller[A] =
-    circeJsonUnmarshaller.map(circe.decodeJson[A])
+    circeJsonUnmarshaller.map(CirceStreamSupport.decodeJson[A])
 
   implicit def circeJsonMarshaller(implicit P: Printer = Printer.noSpaces): ToEntityMarshaller[Json] =
     Marshaller.StringMarshaller.wrap(`application/json`)(P.pretty)

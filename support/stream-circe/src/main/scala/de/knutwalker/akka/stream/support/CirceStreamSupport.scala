@@ -28,8 +28,9 @@ import io.circe.{ CursorOp, Decoder, Encoder, HCursor, HistoryOp, Json, Printer 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
 
+object CirceStreamSupport extends CirceStreamSupport
 
-object circe {
+trait CirceStreamSupport {
 
   def decode[A: Decoder]: Flow[ByteString, A, Unit] =
     JsonStreamParser.flow[Json].map(decodeJson[A])
@@ -44,6 +45,7 @@ object circe {
       case Xor.Left(f)  ⇒ throw new IllegalArgumentException(errorMessage(f.history, cursor, f.message))
     }
   }
+
 
   private[this] def errorMessage(hist: List[HistoryOp], cursor: HCursor, typeHint: String) = {
     val field = fieldFromHistory(hist)

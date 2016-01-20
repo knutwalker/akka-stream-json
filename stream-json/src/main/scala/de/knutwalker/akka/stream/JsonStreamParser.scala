@@ -48,7 +48,7 @@ object JsonStreamParser {
     Parser.parseFromByteBuffer(bytes.asByteBuffer)
 }
 
-final class JsonStreamParser[J](parser: AsyncParser[J])(implicit facade: Facade[J]) extends PushPullStage[ByteString, J] {
+final class JsonStreamParser[J] private (parser: AsyncParser[J])(implicit facade: Facade[J]) extends PushPullStage[ByteString, J] {
   private[this] var parsedJsons  : List[J]              = Nil
   private[this] var unparsedJsons: Iterator[ByteBuffer] = Iterator()
 

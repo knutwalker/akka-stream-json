@@ -1,28 +1,66 @@
-# Akka HTTP Jawn+Argonaut Support
+# Akka Streams Json Support
+
+This library provides Json support for stream based applications using [jawn](https://github.com/non/jawn)
+as a parser. It supports all backends that jawn supports with support for [circe](https://github.com/travisbrown/circe) provided as a convience example.
+
+
+## Installation
+
+There are two main modules, `akka-stream-json` and `akka-http-json`.
+`akka-stream-json` is the basis and provides the stream-based parser while
+`akka-http-json` enabled support to use the desired json library as an Unmarshaller.
+
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-http-jawn-argonaut" % "1.0.0"
+  "de.knutwalker" %% "akka-stream-json" % "2.0.0",
+  "de.knutwalker" %% "akka-http-json" % "2.0.0"
 )
 ```
 
 ## Usage
 
-Either `import de.knutwalker.akkahttp.JawnArgonautSupport._`
-or mixin `... with de.knutwalker.akkahttp.JawnArgonautSupport`.
-Your entities still need an implicit `EncodeJson`, `DecodeJson`, or `CodecJson`.
+The parser lives at `de.knutwalker.akka.stream.JsonStreamParser`
 
-### Prettify
+Use one of the constructor methods in the companion object to create the parser at 
+various levels of abstraction, either a Stage, a Flow, or a Sink.
+You just add the [jawn support facade](https://github.com/non/jawn#supporting-external-asts-with-jawn)
+of your choice and you will can parsed into their respective Json AST.
 
-Per default, the resulting json does not contain any unnecessary whitespace.
-If you want to control the prettiness, bring an implicit `argonaut.PrettyParams` in scope.
+
+For Http support, either `import de.knutwalker.akka.http.JsonSupport._`
+or mixin `... with de.knutwalker.akka.http.JsonSupport`.
+
+Given an implicit jawn facade, this enable you to decode into the respective Json AST
+using the Akka HTTP marshalling framework. As jawn is only about parsing and does not abstract
+over rendering, you'll only get an Unmarshaller.
+
+
+### Circe
 
 ```
-implicit val lookIRenderWithSpaces = Argonaut.spaces2
-
-// ...
-// marshal(...)
+libraryDependencies ++= List(
+  "de.knutwalker" %% "akka-stream-circe" % "2.0.0",
+  "de.knutwalker" %% "akka-http-circe" % "2.0.0"
+)
 ```
+
+(Using circe 0.2.1)
+
+Adding support for a specific framework is
+[quite](support/stream-circe/src/main/scala/de/knutwalker/akka/stream/support/CirceStreamSupport.scala)
+[easy](support/http-circe/src/main/scala/de/knutwalker/akka/http/support/CirceHttpSupport.scala).
+
+These support modules allow you to directly marshall from/unmarshall into your data types
+using circes `Decoder` and `Encoder` type classes.
+
+Just mixin or import `de.knutwalker.akka.http.support.CirceHttpSupport` for Http
+or pipe your `Source[ByteString, _].via(de.knutwalker.akka.stream.CirceStreamSupport.decode[A])`
+to get a `Source[A, _]`.
+ 
+This flow even supports parsing multiple json documents in whatever
+fragmentation they may arrive, which is great for consuming stream/sse based APIs.
+
 
 ## Why jawn?
 
@@ -31,8 +69,6 @@ Most other Json marshalling provider will consume the complete entity
 at first, convert it to a string and then start to parse.
 With jawn, the json is incrementally parsed with each arriving data chunk,
 using directly the underlying ByteBuffers without conversion.
-After the first value is successfully decoded, the parser will stop to
-consume any further chunks.
 
 ## License
 

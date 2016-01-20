@@ -16,6 +16,7 @@
 
 import de.knutwalker.sbt._
 import de.knutwalker.sbt.KSbtKeys._
+import com.typesafe.sbt.SbtGit.git
 import sbt.Keys._
 import sbt._
 
@@ -25,6 +26,7 @@ object Build extends AutoPlugin {
   override def requires = KSbtPlugin
 
   override lazy val projectSettings = Seq(
+       git.baseVersion := "2.1.0",
            projectName := "akka",
           organization := "de.knutwalker",
            description := "Json support for Akka Streams/Http via Jawn",

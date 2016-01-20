@@ -12,7 +12,7 @@ lazy val tests = project dependsOn (`stream-json`, `http-json`, `stream-circe`, 
       "com.typesafe.akka" %% "akka-http-experimental" % "2.0.2" % "test",
       "org.specs2"        %% "specs2-core"            % "3.7"   % "test",
       "io.circe"          %% "circe-generic"          % "0.2.1" % "test"))
-lazy val parent = project in file(".") dependsOn (`http-json`, `http-circe`) aggregate (`stream-json`, `http-json`, `stream-circe`, `http-circe`, tests) settings parentSettings()
+lazy val parent = project in file(".") dependsOn (`http-json`, `http-circe`) aggregate (`stream-json`, `http-json`, `stream-circe`, `http-circe`, tests) settings parentSettings(dontRelease)
 
 // circe support
 lazy val `stream-circe` = project in file("support")/"stream-circe" dependsOn `stream-json` settings (

@@ -26,15 +26,15 @@ object Build extends AutoPlugin {
   override def requires = KSbtPlugin
 
   override lazy val projectSettings = Seq(
-       git.baseVersion := "2.1.0",
-           projectName := "akka",
-          organization := "de.knutwalker",
-           description := "Json support for Akka Streams/Http via Jawn",
-            maintainer := "Paul Horn",
-             startYear := Some(2015),
-         githubProject := Github("knutwalker", "akka-stream-json"),
-           javaVersion := JavaVersion.Java17,
-          scalaVersion := "2.11.7",
-    crossScalaVersions := scalaVersion.value :: "2.10.6" :: Nil
+           git.baseVersion := "3.0.0",
+               projectName := "akka",
+              organization := "de.knutwalker",
+               description := "Json support for Akka Streams/Http via Jawn",
+                maintainer := "Paul Horn",
+                 startYear := Some(2015),
+             githubProject := Github("knutwalker", "akka-stream-json"),
+               javaVersion := JavaVersion.Java18,
+              scalaVersion := "2.11.7",
+  scalacOptions in Compile += "-Xexperimental"
   )
 }

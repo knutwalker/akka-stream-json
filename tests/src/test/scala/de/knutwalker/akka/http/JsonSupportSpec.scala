@@ -49,8 +49,6 @@ object Foo {
 
 object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStreamSupport with FutureMatchers with AfterAll {
 
-
-
   val foo            = Foo("bar", 42, List(true, false))
   val goodJson       = """{"bar":"bar","baz":42,"qux":[true,false]}"""
   val incompleteJson = """{"bar":"bar","baz":42,"qux"""
@@ -109,7 +107,7 @@ object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStr
       }
     }
 
-    "enable unmarshalling of an A for which a Decodee[A] exists" in {
+    "enable unmarshalling of an A for which a Decoder[A] exists" in {
       "A valid, strict json entity" should {
         val goodEntity = mkEntity(goodJson, strict = true)
         "produce the proper type" >> {
@@ -173,6 +171,7 @@ object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStr
   }
 
   def afterAll(): Unit = {
-    system.shutdown()
+    Await.result(system.terminate(), 10.seconds)
+    ()
   }
 }

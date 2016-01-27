@@ -17,6 +17,7 @@
 package de.knutwalker.akka.stream
 package support
 
+import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 
@@ -32,10 +33,10 @@ object CirceStreamSupport extends CirceStreamSupport
 
 trait CirceStreamSupport {
 
-  def decode[A: Decoder]: Flow[ByteString, A, Unit] =
+  def decode[A: Decoder]: Flow[ByteString, A, NotUsed] =
     JsonStreamParser.flow[Json].map(decodeJson[A])
 
-  def encode[A](implicit A: Encoder[A], P: Printer = Printer.noSpaces): Flow[A, String, Unit] =
+  def encode[A](implicit A: Encoder[A], P: Printer = Printer.noSpaces): Flow[A, String, NotUsed] =
     Flow[A].map(a ⇒ P.pretty(A(a)))
 
   private[knutwalker] def decodeJson[A](json: Json)(implicit decoder: Decoder[A]): A = {

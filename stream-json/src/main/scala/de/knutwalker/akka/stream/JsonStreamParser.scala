@@ -16,14 +16,17 @@
 
 package de.knutwalker.akka.stream
 
+import akka.NotUsed
 import akka.stream.scaladsl.{ Flow, Keep, Sink }
-import akka.stream.stage.{ Context, PushPullStage, Stage, SyncDirective, TerminationDirective }
+import akka.stream.stage.{ GraphStage, GraphStageLogic, InHandler, OutHandler }
+import akka.stream.{ Attributes, FlowShape, Graph, Inlet, Outlet }
 import akka.util.ByteString
 
 import jawn.AsyncParser.ValueStream
 import jawn.{ AsyncParser, Facade, Parser }
 
 import scala.annotation.tailrec
+import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.Try
@@ -32,11 +35,11 @@ import java.nio.ByteBuffer
 
 object JsonStreamParser {
 
-  def apply[J: Facade]: Stage[ByteString, J] =
-    new JsonStreamParser(AsyncParser[J](ValueStream))
+  def apply[J: Facade]: Graph[FlowShape[ByteString, J], NotUsed] =
+    new JsonStreamParser(ValueStream)
 
-  def flow[J: Facade]: Flow[ByteString, J, Unit] =
-    Flow[ByteString].transform(() ⇒ apply[J])
+  def flow[J: Facade]: Flow[ByteString, J, NotUsed] =
+    Flow.fromGraph(apply[J])
 
   def head[J: Facade]: Sink[ByteString, Future[J]] =
     flow.toMat(Sink.head)(Keep.right)
@@ -46,74 +49,69 @@ object JsonStreamParser {
 
   def parse[J: Facade](bytes: ByteString): Try[J] =
     Parser.parseFromByteBuffer(bytes.asByteBuffer)
+
+
+  // TODO: use attributes to buffer elements
+  private final class ParserLogic[J: Facade](parser: AsyncParser[J], shape: FlowShape[ByteString, J]) extends GraphStageLogic(shape) {
+    private[this] val in      = shape.in
+    private[this] val out     = shape.out
+    private[this] val scratch = new ArrayBuffer[J](64)
+
+    setHandler(out, new OutHandler {
+      override def onPull() = pull(in)
+      override def onDownstreamFinish() = downstreamFinish()
+    })
+    setHandler(in, new InHandler {
+      override def onPush() = upstreamPush()
+      override def onUpstreamFinish() = finishParser()
+    })
+
+    private def upstreamPush(): Unit = {
+      scratch.clear()
+      val input = grab(in).asByteBuffers
+      emitOrPullLoop(input.iterator, scratch)
+    }
+
+    private def downstreamFinish(): Unit = {
+      parser.finish()
+      cancel(in)
+    }
+
+    private def finishParser(): Unit = {
+      parser.finish() match {
+        case Left(e)      ⇒ failStage(e)
+        case Right(jsons) ⇒ emitMultiple(out, jsons.iterator, () ⇒ complete(out))
+      }
+    }
+
+    @tailrec
+    private[this] def emitOrPullLoop(bs: Iterator[ByteBuffer], results: ArrayBuffer[J]): Unit = {
+      if (bs.hasNext) {
+        val next = bs.next()
+        val absorb = parser.absorb(next)
+        absorb match {
+          case Left(e)      ⇒ failStage(e)
+          case Right(jsons) ⇒
+            if (jsons.nonEmpty) {
+              results ++= jsons
+            }
+            emitOrPullLoop(bs, results)
+        }
+      } else {
+        if (results.nonEmpty) {
+          emitMultiple(out, results.iterator)
+        } else {
+          pull(in)
+        }
+      }
+    }
+  }
 }
 
-final class JsonStreamParser[J] private (parser: AsyncParser[J])(implicit facade: Facade[J]) extends PushPullStage[ByteString, J] {
-  private[this] var parsedJsons  : List[J]              = Nil
-  private[this] var unparsedJsons: Iterator[ByteBuffer] = Iterator()
-
-  def onPush(elem: ByteString, ctx: Context[J]): SyncDirective = {
-    if (parsedJsons.nonEmpty) {
-      unparsedJsons ++= elem.asByteBuffers.iterator
-      pushAlreadyParsedJson(ctx)
-    } else if (unparsedJsons.isEmpty) {
-      parseLoop(elem.asByteBuffers.iterator, ctx)
-    } else {
-      unparsedJsons ++= elem.asByteBuffers.iterator
-      parseLoop(unparsedJsons, ctx)
-    }
-  }
-
-  def onPull(ctx: Context[J]): SyncDirective = {
-    if (parsedJsons.nonEmpty) {
-      pushAlreadyParsedJson(ctx)
-    } else {
-      parseLoop(unparsedJsons, ctx)
-    }
-  }
-
-  override def onUpstreamFinish(ctx: Context[J]): TerminationDirective = {
-    ctx.absorbTermination()
-  }
-
-  private def pushAlreadyParsedJson(ctx: Context[J]): SyncDirective = {
-    val json = parsedJsons.head
-    parsedJsons = parsedJsons.tail
-    ctx.push(json)
-  }
-
-  private def pushAndBufferJson(jsons: Seq[J], ctx: Context[J]): SyncDirective = {
-    parsedJsons = jsons.tail.toList
-    ctx.push(jsons.head)
-  }
-
-  @tailrec
-  private[this] def parseLoop(in: Iterator[ByteBuffer], ctx: Context[J]): SyncDirective = {
-    if (in.hasNext) {
-      val next = in.next()
-      val absorb = parser.absorb(next)
-      absorb match {
-        case Left(e)      ⇒ ctx.fail(e)
-        case Right(jsons) ⇒ jsons.size match {
-          case 0 ⇒ parseLoop(in, ctx)
-          case 1 ⇒ ctx.push(jsons.head)
-          case _ ⇒ pushAndBufferJson({unparsedJsons = in; jsons}, ctx)
-        }
-      }
-    } else {
-      if (!ctx.isFinishing) {
-        ctx.pull()
-      } else {
-        val finish = parser.finish()
-        finish match {
-          case Left(e)      ⇒ ctx.fail(e)
-          case Right(jsons) ⇒ jsons.size match {
-            case 1 ⇒ ctx.pushAndFinish(jsons.head)
-            case 0 ⇒ ctx.finish()
-            case _ ⇒ pushAndBufferJson(jsons, ctx)
-          }
-        }
-      }
-    }
-  }
+final class JsonStreamParser[J: Facade] private(mode: AsyncParser.Mode) extends GraphStage[FlowShape[ByteString, J]] {
+  private[this] val in    = Inlet[ByteString]("Json.in")
+  private[this] val out   = Outlet[J]("Json.out")
+  override      val shape = FlowShape(in, out)
+  override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
+    new JsonStreamParser.ParserLogic[J](AsyncParser[J](mode), shape)
 }

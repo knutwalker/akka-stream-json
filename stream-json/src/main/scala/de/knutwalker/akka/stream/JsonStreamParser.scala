@@ -23,7 +23,7 @@ import akka.stream.{ Attributes, FlowShape, Graph, Inlet, Outlet }
 import akka.util.ByteString
 
 import jawn.AsyncParser.ValueStream
-import jawn.{ AsyncParser, Facade, Parser }
+import jawn.{ AsyncParser, Facade, ParseException, Parser }
 
 import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
@@ -82,8 +82,9 @@ object JsonStreamParser {
 
     private def finishParser(): Unit = {
       parser.finish() match {
-        case Left(e)      ⇒ failStage(e)
-        case Right(jsons) ⇒ emitMultiple(out, jsons.iterator, () ⇒ complete(out))
+        case Left(ParseException("exhausted input", _, _, _)) ⇒ complete(out)
+        case Left(e)                                          ⇒ failStage(e)
+        case Right(jsons)                                     ⇒ emitMultiple(out, jsons.iterator, () ⇒ complete(out))
       }
     }
 

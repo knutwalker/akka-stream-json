@@ -36,7 +36,10 @@ import java.nio.ByteBuffer
 object JsonStreamParser {
 
   def apply[J: Facade]: Graph[FlowShape[ByteString, J], NotUsed] =
-    new JsonStreamParser(ValueStream)
+    apply[J](ValueStream)
+
+  def apply[J: Facade](mode: AsyncParser.Mode): Graph[FlowShape[ByteString, J], NotUsed] =
+    new JsonStreamParser(mode)
 
   def flow[J: Facade]: Flow[ByteString, J, NotUsed] =
     Flow.fromGraph(apply[J])

@@ -53,8 +53,6 @@ object JsonStreamParser {
   def parse[J: Facade](bytes: ByteString): Try[J] =
     Parser.parseFromByteBuffer(bytes.asByteBuffer)
 
-
-  // TODO: use attributes to buffer elements
   private final class ParserLogic[J: Facade](parser: AsyncParser[J], shape: FlowShape[ByteString, J]) extends GraphStageLogic(shape) {
     private[this] val in      = shape.in
     private[this] val out     = shape.out

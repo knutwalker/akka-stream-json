@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import bintray.BintrayKeys.{ bintrayPackage , bintray ⇒ bt }
 import de.knutwalker.sbt._
 import de.knutwalker.sbt.KSbtKeys._
 import com.typesafe.sbt.SbtGit.git
@@ -33,8 +34,10 @@ object Build extends AutoPlugin {
                 maintainer := "Paul Horn",
                  startYear := Some(2015),
              githubProject := Github("knutwalker", "akka-stream-json"),
+            bintrayPackage := "akka-stream-json",
                javaVersion := JavaVersion.Java18,
               scalaVersion := "2.11.7",
-  scalacOptions in Compile += "-Xexperimental"
+  scalacOptions in Compile += "-Xexperimental",
+                 publishTo := { if (!publishArtifact.value) None else if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value }
   )
 }

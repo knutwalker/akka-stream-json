@@ -42,8 +42,8 @@ import scala.concurrent.duration._
 
 case class Foo(bar: String, baz: Int, qux: List[Boolean])
 object Foo {
-  implicit val decoderFoo: Decoder[Foo] = deriveFor[Foo].decoder
-  implicit val encoderFoo: Encoder[Foo] = deriveFor[Foo].encoder
+  implicit val decoderFoo: Decoder[Foo] = deriveDecoder
+  implicit val encoderFoo: Encoder[Foo] = deriveEncoder
 }
 
 

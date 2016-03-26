@@ -1,0 +1,26 @@
+language: scala
+sudo: false
+
+jdk:
+  - oraclejdk8
+
+scala:
+  - 2.11.8
+
+cache:
+  directories:
+    - $HOME/.m2/repository
+    - $HOME/.ivy2/cache
+    - $HOME/.sbt/boot/
+    - $HOME/.sbt/launchers/
+
+script:
+  - sbt ++$TRAVIS_SCALA_VERSION travis
+  - find $HOME/.sbt -name "*.lock" | xargs rm
+  - find $HOME/.ivy2 -name "ivydata-*.properties" | xargs rm
+
+before_install:
+  - pip install --user codecov
+
+after_success:
+  - codecov

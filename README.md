@@ -1,3 +1,8 @@
+[![Build Status][ci-img]][ci]
+[![Coverage][coverage-img]][coverage]
+[![Maven][maven-img]][maven]
+[![Apache License][license-img]][license]
+
 # Akka Streams Json Support
 
 This library provides Json support for stream based applications using [jawn](https://github.com/non/jawn)
@@ -13,8 +18,8 @@ There are two main modules, `akka-stream-json` and `akka-http-json`.
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-stream-json" % "2.0.0",
-  "de.knutwalker" %% "akka-http-json" % "2.0.0"
+  "de.knutwalker" %% "akka-stream-json" % "3.0.0",
+  "de.knutwalker" %% "akka-http-json" % "3.0.0"
 )
 ```
 
@@ -40,12 +45,12 @@ over rendering, you'll only get an Unmarshaller.
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-stream-circe" % "2.0.0",
-  "de.knutwalker" %% "akka-http-circe" % "2.0.0"
+  "de.knutwalker" %% "akka-stream-circe" % "3.0.0",
+  "de.knutwalker" %% "akka-http-circe" % "3.0.0"
 )
 ```
 
-(Using circe 0.2.1)
+(Using circe 0.3.0)
 
 Adding support for a specific framework is
 [quite](support/stream-circe/src/main/scala/de/knutwalker/akka/stream/support/CirceStreamSupport.scala)
@@ -73,3 +78,13 @@ using directly the underlying ByteBuffers without conversion.
 ## License
 
 This code is open source software licensed under the Apache 2.0 License.
+
+[ci-img]: https://img.shields.io/travis/knutwalker/akka-stream-json/master.svg
+[coverage-img]: https://img.shields.io/codecov/c/github/knutwalker/akka-stream-json/master.svg
+[maven-img]: https://img.shields.io/maven-central/v/de.knutwalker/akka-stream-json_2.11.svg?label=latest
+[license-img]: https://img.shields.io/badge/license-APACHE_2-green.svg
+
+[ci]: https://travis-ci.org/knutwalker/akka-stream-json
+[coverage]: https://codecov.io/github/knutwalker/akka-stream-json
+[maven]: http://search.maven.org/#search|ga|1|g%3A%22de.knutwalker%22%20AND%20%28a%3Aakka-stream-*_2.11%20OR%20a%3Aakka-http-*_2.11%29
+[license]: https://www.apache.org/licenses/LICENSE-2.0

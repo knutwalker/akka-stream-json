@@ -14,10 +14,12 @@
  * limitations under the License.
  */
 
-import bintray.BintrayKeys.{ bintrayPackage , bintray ⇒ bt }
+import bintray.BintrayKeys.{ bintrayPackage, bintray ⇒ bt }
 import de.knutwalker.sbt._
 import de.knutwalker.sbt.KSbtKeys._
+
 import com.typesafe.sbt.SbtGit.git
+import com.typesafe.sbt.pgp.PgpKeys
 import sbt.Keys._
 import sbt._
 
@@ -38,6 +40,6 @@ object Build extends AutoPlugin {
                javaVersion := JavaVersion.Java18,
               scalaVersion := "2.11.8",
   scalacOptions in Compile += "-Xexperimental",
-                 publishTo := { if (!publishArtifact.value) None else if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value }
+                 publishTo := { if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value }
   )
 }

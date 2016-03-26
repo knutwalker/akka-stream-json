@@ -26,4 +26,4 @@ lazy val `http-circe` = project in file("support")/"http-circe" dependsOn (`stre
 
 
 
-addCommandAlias("travis", ";clean;coverage;testOnly -- timefactor 3;coverageReport;coverageAggregate;docs/makeSite")
+addCommandAlias("travis", ";clean;coverage;testOnly -- timefactor 3;coverageReport;coverageAggregate")

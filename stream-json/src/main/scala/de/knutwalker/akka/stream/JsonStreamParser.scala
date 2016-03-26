@@ -17,6 +17,7 @@
 package de.knutwalker.akka.stream
 
 import akka.NotUsed
+import akka.stream.Attributes.name
 import akka.stream.scaladsl.{ Flow, Keep, Sink }
 import akka.stream.stage.{ GraphStage, GraphStageLogic, InHandler, OutHandler }
 import akka.stream.{ Attributes, FlowShape, Graph, Inlet, Outlet }
@@ -35,6 +36,8 @@ import java.nio.ByteBuffer
 
 object JsonStreamParser {
 
+  private[this] val jsonStream = name("json-stream")
+
   def apply[J: Facade]: Graph[FlowShape[ByteString, J], NotUsed] =
     apply[J](ValueStream)
 
@@ -42,13 +45,22 @@ object JsonStreamParser {
     new JsonStreamParser(mode)
 
   def flow[J: Facade]: Flow[ByteString, J, NotUsed] =
-    Flow.fromGraph(apply[J])
+    Flow.fromGraph(apply[J]).withAttributes(jsonStream)
+
+  def flow[J: Facade](mode: AsyncParser.Mode): Flow[ByteString, J, NotUsed] =
+    Flow.fromGraph(apply[J](mode)).withAttributes(jsonStream)
 
   def head[J: Facade]: Sink[ByteString, Future[J]] =
     flow.toMat(Sink.head)(Keep.right)
 
+  def head[J: Facade](mode: AsyncParser.Mode): Sink[ByteString, Future[J]] =
+    flow(mode).toMat(Sink.head)(Keep.right)
+
   def headOption[J: Facade]: Sink[ByteString, Future[Option[J]]] =
     flow.toMat(Sink.headOption)(Keep.right)
+
+  def headOption[J: Facade](mode: AsyncParser.Mode): Sink[ByteString, Future[Option[J]]] =
+    flow(mode).toMat(Sink.headOption)(Keep.right)
 
   def parse[J: Facade](bytes: ByteString): Try[J] =
     Parser.parseFromByteBuffer(bytes.asByteBuffer)

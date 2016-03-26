@@ -25,6 +25,7 @@ import cats.data.Xor
 
 import io.circe.jawn.CirceSupportParser._
 import io.circe.{ CursorOp, Decoder, Encoder, HCursor, HistoryOp, Json, Printer }
+import jawn.AsyncParser
 
 import scala.annotation.tailrec
 import scala.language.implicitConversions
@@ -35,6 +36,9 @@ trait CirceStreamSupport {
 
   def decode[A: Decoder]: Flow[ByteString, A, NotUsed] =
     JsonStreamParser.flow[Json].map(decodeJson[A])
+
+  def decode[A: Decoder](mode: AsyncParser.Mode): Flow[ByteString, A, NotUsed] =
+    JsonStreamParser.flow[Json](mode).map(decodeJson[A])
 
   def encode[A](implicit A: Encoder[A], P: Printer = Printer.noSpaces): Flow[A, String, NotUsed] =
     Flow[A].map(a ⇒ P.pretty(A(a)))

@@ -141,7 +141,7 @@ object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStr
       "A incomplete, lazily streamed json entity" should {
         val incompleteEntity = mkEntity(incompleteJson)
         "produce a parse exception with the message 'exhausted input'" >> {
-          Unmarshal(incompleteEntity).to[Foo] must throwA[ParseException]("exhausted input").await
+          Unmarshal(incompleteEntity).to[Foo] must throwA[NoSuchElementException]("head of empty stream").await
         }
       }
 

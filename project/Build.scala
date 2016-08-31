@@ -30,7 +30,7 @@ object Build extends AutoPlugin {
 
   override lazy val projectSettings = Seq(
            git.baseVersion := "3.0.0",
-               projectName := "akka",
+               projectName := "akka-stream-json",
               organization := "de.knutwalker",
                description := "Json support for Akka Streams/Http via Jawn",
                 maintainer := "Paul Horn",

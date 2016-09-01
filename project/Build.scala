@@ -30,7 +30,7 @@ object Build extends AutoPlugin {
 
   override lazy val projectSettings = Seq(
            git.baseVersion := "3.0.0",
-               projectName := "akka-stream-json",
+               projectName := "akka", // see https://github.com/knutwalker/akka-stream-json/pull/4#issuecomment-244199557 for why it's akka and not akka-stream-json
               organization := "de.knutwalker",
                description := "Json support for Akka Streams/Http via Jawn",
                 maintainer := "Paul Horn",

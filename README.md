@@ -5,6 +5,8 @@
 
 # Akka Streams Json Support
 
+[![Join the chat at https://gitter.im/knutwalker/akka-stream-json](https://badges.gitter.im/knutwalker/akka-stream-json.svg)](https://gitter.im/knutwalker/akka-stream-json?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge)
+
 This library provides Json support for stream based applications using [jawn](https://github.com/non/jawn)
 as a parser. It supports all backends that jawn supports with support for [circe](https://github.com/travisbrown/circe) provided as a convience example.
 

@@ -1,5 +1,5 @@
 /*
- * Copyright 2015 – 2016 Paul Horn
+ * Copyright 2015 – 2017 Paul Horn
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -21,10 +21,8 @@ import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 
-import cats.data.Xor
-
 import io.circe.jawn.CirceSupportParser._
-import io.circe.{ CursorOp, Decoder, Encoder, HCursor, HistoryOp, Json, Printer }
+import io.circe.{ CursorOp, Decoder, Encoder, HCursor, Json, Printer }
 import jawn.AsyncParser
 
 import scala.annotation.tailrec
@@ -46,13 +44,13 @@ trait CirceStreamSupport {
   private[knutwalker] def decodeJson[A](json: Json)(implicit decoder: Decoder[A]): A = {
     val cursor = json.hcursor
     decoder(cursor) match {
-      case Xor.Right(e) ⇒ e
-      case Xor.Left(f)  ⇒ throw new IllegalArgumentException(errorMessage(f.history, cursor, f.message))
+      case Right(e) ⇒ e
+      case Left(f)  ⇒ throw new IllegalArgumentException(errorMessage(f.history, cursor, f.message))
     }
   }
 
 
-  private[this] def errorMessage(hist: List[HistoryOp], cursor: HCursor, typeHint: String) = {
+  private[this] def errorMessage(hist: List[CursorOp], cursor: HCursor, typeHint: String) = {
     val field = fieldFromHistory(hist)
     val down = cursor.downField(field)
     if (down.succeeded) {
@@ -63,13 +61,13 @@ trait CirceStreamSupport {
   }
 
   @tailrec
-  private[this] def fieldFromHistory(hist: List[HistoryOp], arrayIndex: Int = 0, out: List[String] = Nil): String = hist match {
-    case some :: rest ⇒ some.op match {
-      case Some(CursorOp.MoveRight)    ⇒ fieldFromHistory(rest, arrayIndex + 1, out)
-      case Some(CursorOp.MoveLeft)     ⇒ fieldFromHistory(rest, arrayIndex - 1, out)
-      case Some(CursorOp.DownArray)    ⇒ fieldFromHistory(rest, 0, s"[$arrayIndex]" :: out)
-      case Some(CursorOp.DownField(f)) ⇒ fieldFromHistory(rest, arrayIndex, f :: out)
-      case _                           ⇒ fieldFromHistory(rest, arrayIndex, out)
+  private[this] def fieldFromHistory(hist: List[CursorOp], arrayIndex: Int = 0, out: List[String] = Nil): String = hist match {
+    case some :: rest ⇒ some match {
+      case CursorOp.MoveRight    ⇒ fieldFromHistory(rest, arrayIndex + 1, out)
+      case CursorOp.MoveLeft     ⇒ fieldFromHistory(rest, arrayIndex - 1, out)
+      case CursorOp.DownArray    ⇒ fieldFromHistory(rest, 0, s"[$arrayIndex]" :: out)
+      case CursorOp.DownField(f) ⇒ fieldFromHistory(rest, arrayIndex, f :: out)
+      case _                     ⇒ fieldFromHistory(rest, arrayIndex, out)
     }
     case Nil          ⇒ out.mkString(".")
   }

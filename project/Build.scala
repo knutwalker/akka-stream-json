@@ -28,6 +28,8 @@ object Build extends AutoPlugin {
   override def trigger = allRequirements
   override def requires = KSbtPlugin
 
+  val currentScalaVersion = "2.12.1"
+
   override lazy val projectSettings = Seq(
            git.baseVersion := "3.0.0",
                projectName := "akka", // see https://github.com/knutwalker/akka-stream-json/pull/4#issuecomment-244199557 for why it's akka and not akka-stream-json
@@ -38,7 +40,8 @@ object Build extends AutoPlugin {
              githubProject := Github("knutwalker", "akka-stream-json"),
             bintrayPackage := "akka-stream-json",
                javaVersion := JavaVersion.Java18,
-              scalaVersion := "2.11.8",
+        crossScalaVersions := Seq("2.11.8", currentScalaVersion),
+              scalaVersion := currentScalaVersion,
   scalacOptions in Compile += "-Xexperimental",
                  publishTo := { if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value }
   )

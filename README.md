@@ -21,14 +21,17 @@ There are two main modules, `akka-stream-json` and `akka-http-json`.
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-stream-json" % "3.1.0",
-  "de.knutwalker" %% "akka-http-json" % "3.1.0"
+  "de.knutwalker" %% "akka-stream-json" % "3.2.0",
+  "de.knutwalker" %% "akka-http-json" % "3.2.0"
 )
 ```
 
-`akka-stream-json` depends on `jawn-parser` at version `0.9.0`
-and is compiled against `akka-stream` at version `2.4.9`.
-The circe submodule dpends on version `0.5.0` of `circe-jawn`
+`akka-stream-json` depends on `jawn-parser` at version `0.10.4`
+and is compiled against `akka-stream` at version `2.4.17`.
+The circe submodule depends on version `0.7.0` of `circe-jawn`
+The Akk Http submodule depends on version `10.0.4` of `akka-http`
+
+`akka-stream-json` is published for Scala 2.12 and 2.11.
 
 ## Usage
 
@@ -52,12 +55,12 @@ over rendering, you'll only get an Unmarshaller.
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-stream-circe" % "3.1.0",
-  "de.knutwalker" %% "akka-http-circe" % "3.1.0"
+  "de.knutwalker" %% "akka-stream-circe" % "3.2.0",
+  "de.knutwalker" %% "akka-http-circe" % "3.2.0"
 )
 ```
 
-(Using circe 0.5.0)
+(Using circe 0.7.0)
 
 Adding support for a specific framework is
 [quite](support/stream-circe/src/main/scala/de/knutwalker/akka/stream/support/CirceStreamSupport.scala)
@@ -88,12 +91,12 @@ This code is open source software licensed under the Apache 2.0 License.
 
 [ci-img]: https://img.shields.io/travis/knutwalker/akka-stream-json/master.svg
 [coverage-img]: https://img.shields.io/codecov/c/github/knutwalker/akka-stream-json/master.svg
-[maven-img]: https://img.shields.io/maven-central/v/de.knutwalker/akka-stream-json_2.11.svg?label=latest
+[maven-img]: https://img.shields.io/maven-central/v/de.knutwalker/akka-stream-json_2.12.svg?label=latest
 [gitter-img]: https://img.shields.io/badge/gitter-Join_Chat-1dce73.svg
 [license-img]: https://img.shields.io/badge/license-APACHE_2-green.svg
 
 [ci]: https://travis-ci.org/knutwalker/akka-stream-json
 [coverage]: https://codecov.io/github/knutwalker/akka-stream-json
-[maven]: http://search.maven.org/#search|ga|1|g%3A%22de.knutwalker%22%20AND%20%28a%3Aakka-stream-*_2.11%20OR%20a%3Aakka-http-*_2.11%29
+[maven]: http://search.maven.org/#search|ga|1|g%3A%22de.knutwalker%22%20AND%20%28a%3Aakka-stream-*_2.11%20OR%20a%3Aakka-http-*_2.11%20OR%20a%3Aakka-stream-*_2.12%20OR%20a%3Aakka-http-*_2.12%29
 [gitter]: https://gitter.im/knutwalker/akka-stream-json?utm_source=badge&utm_medium=badge&utm_campaign=pr-badge&utm_content=badge
 [license]: https://www.apache.org/licenses/LICENSE-2.0

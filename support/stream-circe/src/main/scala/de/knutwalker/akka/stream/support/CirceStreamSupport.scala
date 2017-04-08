@@ -41,11 +41,14 @@ trait CirceStreamSupport {
   def encode[A](implicit A: Encoder[A], P: Printer = Printer.noSpaces): Flow[A, String, NotUsed] =
     Flow[A].map(a ⇒ P.pretty(A(a)))
 
+  case class JsonParsingException(hist: List[CursorOp], cursor: HCursor, typeHint: String) extends Exception {
+    override def getMessage: String = errorMessage(hist, cursor, typeHint)}
+
   private[knutwalker] def decodeJson[A](json: Json)(implicit decoder: Decoder[A]): A = {
     val cursor = json.hcursor
     decoder(cursor) match {
       case Right(e) ⇒ e
-      case Left(f)  ⇒ throw new IllegalArgumentException(errorMessage(f.history, cursor, f.message))
+      case Left(f)  ⇒ throw JsonParsingException(f.history, cursor, f.message)
     }
   }
 

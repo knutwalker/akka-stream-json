@@ -45,6 +45,11 @@ object Foo {
   implicit val decoderFoo: Decoder[Foo] = deriveDecoder
   implicit val encoderFoo: Encoder[Foo] = deriveEncoder
 }
+case class Bar(foo: Foo)
+object Bar {
+  implicit val decoderBar: Decoder[Bar] = deriveDecoder
+  implicit val encoderBar: Encoder[Bar] = deriveEncoder
+}
 
 
 object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStreamSupport with FutureMatchers with AfterAll {
@@ -53,6 +58,9 @@ object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStr
   val goodJson       = """{"bar":"bar","baz":42,"qux":[true,false]}"""
   val incompleteJson = """{"bar":"bar","baz":42,"qux"""
   val badJson        = """{"bar":"bar"}"""
+  val badBarJson     = """{"foo":{"bar":"bar"}}"""
+  val wrongJson      = """{"bar":"bar","baz":"forty two","qux":[]}"""
+  val wrongBarJson   = """{"foo":{"bar":"bar","baz":"forty two","qux":[]}}"""
   val invalidJson    = """{"bar"="bar"}"""
   val prettyJson     = """
                          |{
@@ -146,9 +154,21 @@ object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStr
       }
 
       "A bad json entity" should {
-        val badEntity = mkEntity(badJson, strict = true)
+        "produce a parse exception" >> {
+          val badEntity = mkEntity(wrongJson, strict = true)
+          Unmarshal(badEntity).to[Foo] must throwA[JsonParsingException]("Could not decode \\[\"forty two\"\\] at \\[\\.baz\\] as \\[Int\\]\\.").await
+        }
+        "produce a parse exception for nested errors" >> {
+          val badEntity = mkEntity(wrongBarJson, strict = true)
+          Unmarshal(badEntity).to[Bar] must throwA[JsonParsingException]("Could not decode \\[\"forty two\"\\] at \\[\\.foo\\.baz\\] as \\[Int\\]\\.").await
+        }
         "produce a parse exception with the message 'field missing'" >> {
-          Unmarshal(badEntity).to[Foo] must throwA[IllegalArgumentException]("The field \\[baz\\] is missing\\.").await
+          val badEntity = mkEntity(badJson, strict = true)
+          Unmarshal(badEntity).to[Foo] must throwA[JsonParsingException]("The field \\[\\.baz\\] is missing\\.").await
+        }
+        "produce a parse exception with the message 'field missing' for nested errors" >> {
+          val badEntity = mkEntity(badBarJson, strict = true)
+          Unmarshal(badEntity).to[Bar] must throwA[JsonParsingException]("The field \\[\\.foo\\.baz\\] is missing\\.").await
         }
       }
 

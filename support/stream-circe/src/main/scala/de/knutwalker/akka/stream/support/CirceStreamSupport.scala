@@ -21,8 +21,9 @@ import akka.NotUsed
 import akka.stream.scaladsl.Flow
 import akka.util.ByteString
 
+import io.circe.CursorOp.DownField
 import io.circe.jawn.CirceSupportParser._
-import io.circe.{ CursorOp, Decoder, Encoder, HCursor, Json, Printer }
+import io.circe.{ CursorOp, Decoder, DecodingFailure, Encoder, HCursor, Json, Printer }
 import jawn.AsyncParser
 
 import scala.annotation.tailrec
@@ -41,37 +42,29 @@ trait CirceStreamSupport {
   def encode[A](implicit A: Encoder[A], P: Printer = Printer.noSpaces): Flow[A, String, NotUsed] =
     Flow[A].map(a ⇒ P.pretty(A(a)))
 
-  case class JsonParsingException(hist: List[CursorOp], cursor: HCursor, typeHint: String) extends Exception {
-    override def getMessage: String = errorMessage(hist, cursor, typeHint)}
+  case class JsonParsingException(df: DecodingFailure, cursor: HCursor)
+    extends Exception(errorMessage(df.history, cursor, df.message), df)
 
   private[knutwalker] def decodeJson[A](json: Json)(implicit decoder: Decoder[A]): A = {
     val cursor = json.hcursor
     decoder(cursor) match {
       case Right(e) ⇒ e
-      case Left(f)  ⇒ throw JsonParsingException(f.history, cursor, f.message)
+      case Left(f)  ⇒ throw JsonParsingException(f, cursor)
     }
   }
 
 
   private[this] def errorMessage(hist: List[CursorOp], cursor: HCursor, typeHint: String) = {
-    val field = fieldFromHistory(hist)
-    val down = cursor.downField(field)
-    if (down.succeeded) {
-      s"Could not decode [${down.focus.get}] at [$field] as [$typeHint]."
+    val ac = cursor.replay(hist)
+    if (ac.failed && lastWasDownField(hist)) {
+      s"The field [${CursorOp.opsToPath(hist)}] is missing."
     } else {
-      s"The field [$field] is missing."
+      s"Could not decode [${ac.focus.getOrElse(Json.Null)}] at [${CursorOp.opsToPath(hist)}] as [$typeHint]."
     }
   }
 
-  @tailrec
-  private[this] def fieldFromHistory(hist: List[CursorOp], arrayIndex: Int = 0, out: List[String] = Nil): String = hist match {
-    case some :: rest ⇒ some match {
-      case CursorOp.MoveRight    ⇒ fieldFromHistory(rest, arrayIndex + 1, out)
-      case CursorOp.MoveLeft     ⇒ fieldFromHistory(rest, arrayIndex - 1, out)
-      case CursorOp.DownArray    ⇒ fieldFromHistory(rest, 0, s"[$arrayIndex]" :: out)
-      case CursorOp.DownField(f) ⇒ fieldFromHistory(rest, arrayIndex, f :: out)
-      case _                     ⇒ fieldFromHistory(rest, arrayIndex, out)
-    }
-    case Nil          ⇒ out.mkString(".")
+  private[this] def lastWasDownField(hist: List[CursorOp]) = hist.headOption match {
+    case Some(DownField(_)) => true
+    case _                  => false
   }
 }

@@ -76,6 +76,8 @@ to get a `Source[A, _]`.
 This flow even supports parsing multiple json documents in whatever
 fragmentation they may arrive, which is great for consuming stream/sse based APIs.
 
+If there is an error in parsing the Json you can catch `de.knutwalker.akka.http.support.CirceStreamSupport.JsonParsingException`.
+The exception provides Circe cursor history, current cursor and the type hint of the error.
 
 ## Why jawn?
 

@@ -21,8 +21,8 @@ There are two main modules, `akka-stream-json` and `akka-http-json`.
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-stream-json" % "3.2.0",
-  "de.knutwalker" %% "akka-http-json" % "3.2.0"
+  "de.knutwalker" %% "akka-stream-json" % "3.3.0",
+  "de.knutwalker" %% "akka-http-json" % "3.3.0"
 )
 ```
 
@@ -55,8 +55,8 @@ over rendering, you'll only get an Unmarshaller.
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-stream-circe" % "3.2.0",
-  "de.knutwalker" %% "akka-http-circe" % "3.2.0"
+  "de.knutwalker" %% "akka-stream-circe" % "3.3.0",
+  "de.knutwalker" %% "akka-http-circe" % "3.3.0"
 )
 ```
 

@@ -28,8 +28,8 @@ libraryDependencies ++= List(
 
 `akka-stream-json` depends on `jawn-parser` at version `0.10.4`
 and is compiled against `akka-stream` at version `2.4.17`.
-The circe submodule depends on version `0.7.0` of `circe-jawn`
-The Akk Http submodule depends on version `10.0.4` of `akka-http`
+The circe submodule depends on version `0.8.0` of `circe-jawn`
+The Akk Http submodule depends on version `10.0.7` of `akka-http`
 
 `akka-stream-json` is published for Scala 2.12 and 2.11.
 
@@ -55,12 +55,12 @@ over rendering, you'll only get an Unmarshaller.
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-stream-circe" % "3.3.0",
-  "de.knutwalker" %% "akka-http-circe" % "3.3.0"
+  "de.knutwalker" %% "akka-stream-circe" % "3.4.0",
+  "de.knutwalker" %% "akka-http-circe" % "3.4.0"
 )
 ```
 
-(Using circe 0.7.0)
+(Using circe 0.8.0)
 
 Adding support for a specific framework is
 [quite](support/stream-circe/src/main/scala/de/knutwalker/akka/stream/support/CirceStreamSupport.scala)

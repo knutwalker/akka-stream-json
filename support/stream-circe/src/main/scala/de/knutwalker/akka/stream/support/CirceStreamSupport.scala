@@ -26,9 +26,6 @@ import io.circe.jawn.CirceSupportParser._
 import io.circe.{ CursorOp, Decoder, DecodingFailure, Encoder, HCursor, Json, Printer }
 import jawn.AsyncParser
 
-import scala.annotation.tailrec
-import scala.language.implicitConversions
-
 object CirceStreamSupport extends CirceStreamSupport
 
 trait CirceStreamSupport {

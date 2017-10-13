@@ -28,7 +28,6 @@ import jawn.{ AsyncParser, Facade, ParseException, Parser }
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
-import scala.language.implicitConversions
 import scala.util.Try
 import scala.util.control.NonFatal
 import java.nio.ByteBuffer

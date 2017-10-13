@@ -25,9 +25,6 @@ import akka.http.scaladsl.util.FastFuture
 
 import jawn.Facade
 
-import scala.language.implicitConversions
-
-
 object JsonSupport extends JsonSupport
 
 trait JsonSupport {

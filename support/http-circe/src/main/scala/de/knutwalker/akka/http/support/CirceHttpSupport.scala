@@ -26,9 +26,6 @@ import akka.http.scaladsl.unmarshalling.FromEntityUnmarshaller
 import io.circe.jawn.CirceSupportParser._
 import io.circe.{ Decoder, Encoder, Json, Printer }
 
-import scala.language.implicitConversions
-
-
 object CirceHttpSupport extends CirceHttpSupport
 
 trait CirceHttpSupport extends JsonSupport {

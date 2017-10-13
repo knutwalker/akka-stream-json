@@ -19,7 +19,6 @@ import de.knutwalker.sbt._
 import de.knutwalker.sbt.KSbtKeys._
 
 import com.typesafe.sbt.SbtGit.git
-import com.typesafe.sbt.pgp.PgpKeys
 import sbt.Keys._
 import sbt._
 
@@ -28,7 +27,7 @@ object Build extends AutoPlugin {
   override def trigger = allRequirements
   override def requires = KSbtPlugin
 
-  val currentScalaVersion = "2.12.1"
+  val currentScalaVersion = "2.12.3"
 
   override lazy val projectSettings = Seq(
            git.baseVersion := "3.0.0",
@@ -43,6 +42,7 @@ object Build extends AutoPlugin {
         crossScalaVersions := Seq("2.11.8", currentScalaVersion),
               scalaVersion := currentScalaVersion,
   scalacOptions in Compile += "-Xexperimental",
+  scalacOptions in Compile ~= (_.filterNot(_ == "-opt:l:project") ++ Seq("-opt:l:inline", "-Xexperimental")),
                  publishTo := { if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value }
   )
 }

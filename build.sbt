@@ -1,9 +1,9 @@
 lazy val versions = new {
   val circe      = "0.8.0"
-  val akkaHttp   = "10.0.7"
-  val akka       = "2.4.17"
+  val akkaHttp   = "10.0.10"
+  val akka       = "2.4.19"
   val jawn       = "0.10.4"
-  val specs2     = "3.8.6"
+  val specs2     = "3.9.5"
 }
 
 lazy val `stream-json` = project settings (

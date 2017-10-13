@@ -17,26 +17,24 @@
 package de.knutwalker.akka.stream
 
 import akka.NotUsed
-import akka.stream.Attributes.name
+import akka.stream.ActorAttributes.SupervisionStrategy
 import akka.stream.scaladsl.{ Flow, Keep, Sink }
 import akka.stream.stage.{ GraphStage, GraphStageLogic, InHandler, OutHandler }
-import akka.stream.{ Attributes, FlowShape, Graph, Inlet, Outlet }
+import akka.stream.{ Attributes, FlowShape, Graph, Inlet, Outlet, Supervision }
 import akka.util.ByteString
 
 import jawn.AsyncParser.ValueStream
 import jawn.{ AsyncParser, Facade, ParseException, Parser }
 
-import scala.annotation.tailrec
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
 import scala.language.implicitConversions
 import scala.util.Try
+import scala.util.control.NonFatal
 import java.nio.ByteBuffer
 
 
 object JsonStreamParser {
-
-  private[this] val jsonStream = name("json-stream")
 
   def apply[J: Facade]: Graph[FlowShape[ByteString, J], NotUsed] =
     apply[J](ValueStream)
@@ -45,10 +43,10 @@ object JsonStreamParser {
     new JsonStreamParser(mode)
 
   def flow[J: Facade]: Flow[ByteString, J, NotUsed] =
-    Flow.fromGraph(apply[J]).withAttributes(jsonStream)
+    Flow.fromGraph(apply[J])
 
   def flow[J: Facade](mode: AsyncParser.Mode): Flow[ByteString, J, NotUsed] =
-    Flow.fromGraph(apply[J](mode)).withAttributes(jsonStream)
+    Flow.fromGraph(apply[J](mode))
 
   def head[J: Facade]: Sink[ByteString, Future[J]] =
     flow.toMat(Sink.head)(Keep.right)
@@ -65,59 +63,69 @@ object JsonStreamParser {
   def parse[J: Facade](bytes: ByteString): Try[J] =
     Parser.parseFromByteBuffer(bytes.asByteBuffer)
 
-  private final class ParserLogic[J: Facade](parser: AsyncParser[J], shape: FlowShape[ByteString, J]) extends GraphStageLogic(shape) {
+  private final class ParserLogic[J: Facade](parser: AsyncParser[J], shape: FlowShape[ByteString, J], attributes: Attributes) extends GraphStageLogic(shape) with InHandler with OutHandler {
     private[this] val in      = shape.in
     private[this] val out     = shape.out
     private[this] val scratch = new ArrayBuffer[J](64)
 
-    setHandler(out, new OutHandler {
-      override def onPull() = pull(in)
-      override def onDownstreamFinish() = downstreamFinish()
-    })
-    setHandler(in, new InHandler {
-      override def onPush() = upstreamPush()
-      override def onUpstreamFinish() = finishParser()
-    })
+    private[this] lazy val decider = attributes.get[SupervisionStrategy].map(_.decider).getOrElse(Supervision.stoppingDecider)
 
-    private def upstreamPush(): Unit = {
+    setHandlers(in, out, this)
+
+    def onPull(): Unit = tryPull(in)
+
+    def onPush(): Unit = {
       scratch.clear()
       val input = grab(in).asByteBuffers
       emitOrPullLoop(input.iterator, scratch)
     }
 
-    private def downstreamFinish(): Unit = {
-      parser.finish()
-      cancel(in)
-    }
-
-    private def finishParser(): Unit = {
+    override def onUpstreamFinish(): Unit = {
       parser.finish() match {
-        case Left(ParseException("exhausted input", _, _, _)) ⇒ complete(out)
-        case Left(e)                                          ⇒ failStage(e)
-        case Right(jsons)                                     ⇒ emitMultiple(out, jsons.iterator, () ⇒ complete(out))
+        case Left(ParseException("exhausted input", _, _, _)) => completeStage()
+        case Left(e)                                          => if (onException(e)) completeStage()
+        case Right(jsons)                                     => emitMultiple(out, jsons.iterator, completeStage _)
       }
     }
 
-    @tailrec
+    override def onDownstreamFinish(): Unit = {
+      parser.finish()
+      completeStage()
+    }
+
     private[this] def emitOrPullLoop(bs: Iterator[ByteBuffer], results: ArrayBuffer[J]): Unit = {
-      if (bs.hasNext) {
+      while (bs.hasNext) {
         val next = bs.next()
-        val absorb = parser.absorb(next)
-        absorb match {
-          case Left(e)      ⇒ failStage(e)
-          case Right(jsons) ⇒
-            if (jsons.nonEmpty) {
-              results ++= jsons
-            }
-            emitOrPullLoop(bs, results)
+        val shouldContinue = try {
+          val absorb = parser.absorb(next)
+          absorb match {
+            case Left(e)      =>
+              onException(e)
+            case Right(jsons) =>
+              if (jsons.nonEmpty) {
+                results ++= jsons
+              }
+              true
+          }
+        } catch {
+          case NonFatal(ex) => onException(ex)
         }
-      } else {
-        if (results.nonEmpty) {
-          emitMultiple(out, results.iterator)
-        } else {
-          pull(in)
+        if (!shouldContinue) {
+          while (bs.hasNext) {
+            bs.next()
+          }
         }
       }
+      if (results.nonEmpty) {
+        emitMultiple(out, results.iterator)
+      } else if (!hasBeenPulled(in)) {
+        tryPull(in)
+      }
+    }
+
+    private def onException(ex: Throwable): Boolean = decider(ex) match {
+      case Supervision.Stop                         => failStage(ex); false
+      case Supervision.Restart | Supervision.Resume => true
     }
   }
 }
@@ -126,6 +134,9 @@ final class JsonStreamParser[J: Facade] private(mode: AsyncParser.Mode) extends 
   private[this] val in    = Inlet[ByteString]("Json.in")
   private[this] val out   = Outlet[J]("Json.out")
   override      val shape = FlowShape(in, out)
+
+  override def initialAttributes: Attributes = Attributes.name(s"jsonStream($mode)")
+
   override def createLogic(inheritedAttributes: Attributes): GraphStageLogic =
-    new JsonStreamParser.ParserLogic[J](AsyncParser[J](mode), shape)
+    new JsonStreamParser.ParserLogic[J](AsyncParser[J](mode), shape, inheritedAttributes)
 }

@@ -39,10 +39,14 @@ object Build extends AutoPlugin {
              githubProject := Github("knutwalker", "akka-stream-json"),
             bintrayPackage := "akka-stream-json",
                javaVersion := JavaVersion.Java18,
-        crossScalaVersions := Seq("2.11.8", currentScalaVersion),
+        crossScalaVersions := Seq("2.11.11", currentScalaVersion),
               scalaVersion := currentScalaVersion,
-  scalacOptions in Compile += "-Xexperimental",
-  scalacOptions in Compile ~= (_.filterNot(_ == "-opt:l:project") ++ Seq("-opt:l:inline", "-Xexperimental")),
-                 publishTo := { if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value }
-  )
+                 publishTo := { if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value },
+  scalacOptions in Compile := {
+    val old = (scalacOptions in Compile).value
+    scalaBinaryVersion.value match {
+      case "2.11" => old :+ "-Xexperimental"
+      case "2.12" => old.filterNot(_ == "-opt:l:project") ++ Seq("-opt:l:inline", "-Xexperimental")
+    }
+  })
 }

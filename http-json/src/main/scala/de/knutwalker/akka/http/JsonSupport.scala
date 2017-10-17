@@ -22,6 +22,7 @@ import akka.http.scaladsl.model.HttpEntity
 import akka.http.scaladsl.model.MediaTypes.`application/json`
 import akka.http.scaladsl.unmarshalling.{ FromEntityUnmarshaller, Unmarshaller }
 import akka.http.scaladsl.util.FastFuture
+import akka.stream.scaladsl.Keep
 
 import jawn.Facade
 
@@ -32,6 +33,6 @@ trait JsonSupport {
   implicit def jsonUnmarshaller[J: Facade]: FromEntityUnmarshaller[J] =
     Unmarshaller.withMaterializer[HttpEntity, J](_ ⇒ implicit mat ⇒ {
       case HttpEntity.Strict(_, data) ⇒ FastFuture(JsonStreamParser.parse[J](data))
-      case entity                     ⇒ entity.dataBytes.runWith(JsonStreamParser.head[J])
+      case entity                     ⇒ entity.dataBytes.via(JsonStreamParser[J]).runReduce(Keep.left)
     }).forContentTypes(`application/json`)
 }

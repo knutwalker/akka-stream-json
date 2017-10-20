@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-import bintray.BintrayKeys.{ bintrayPackage, bintray ⇒ bt }
+import bintray.BintrayKeys.{ bintrayPackage, bintray => bt }
 import de.knutwalker.sbt._
 import de.knutwalker.sbt.KSbtKeys._
 
@@ -30,7 +30,7 @@ object Build extends AutoPlugin {
   val currentScalaVersion = "2.12.3"
 
   override lazy val projectSettings = Seq(
-           git.baseVersion := "3.0.0",
+           git.baseVersion := "3.5.0",
                projectName := "akka", // see https://github.com/knutwalker/akka-stream-json/pull/4#issuecomment-244199557 for why it's akka and not akka-stream-json
               organization := "de.knutwalker",
                description := "Json support for Akka Streams/Http via Jawn",

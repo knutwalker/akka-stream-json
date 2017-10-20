@@ -37,7 +37,7 @@ trait CirceStreamSupport {
     JsonStreamParser.flow[Json](mode).map(decodeJson[A])
 
   def encode[A](implicit A: Encoder[A], P: Printer = Printer.noSpaces): Flow[A, String, NotUsed] =
-    Flow[A].map(a ⇒ P.pretty(A(a)))
+    Flow[A].map(a => P.pretty(A(a)))
 
   case class JsonParsingException(df: DecodingFailure, cursor: HCursor)
     extends Exception(errorMessage(df.history, cursor, df.message), df)
@@ -45,8 +45,8 @@ trait CirceStreamSupport {
   private[knutwalker] def decodeJson[A](json: Json)(implicit decoder: Decoder[A]): A = {
     val cursor = json.hcursor
     decoder(cursor) match {
-      case Right(e) ⇒ e
-      case Left(f)  ⇒ throw JsonParsingException(f, cursor)
+      case Right(e) => e
+      case Left(f)  => throw JsonParsingException(f, cursor)
     }
   }
 

@@ -77,7 +77,7 @@ object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStr
 
   title("Specification for Jawn Json Support with Circe")
 
-  "JawnArgonautSupportSpec" should {
+  "JsonCirceSupportSpec" should {
     import system.dispatcher
     implicit val eenv = ExecutionEnv.fromExecutionContext(system.dispatcher)
     "enable marshalling of an A for which an Encoder[A] exists" in {
@@ -148,8 +148,8 @@ object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStr
 
       "A incomplete, lazily streamed json entity" should {
         val incompleteEntity = mkEntity(incompleteJson)
-        "produce a parse exception with the message 'exhausted input'" >> {
-          Unmarshal(incompleteEntity).to[Foo] must throwA[NoSuchElementException]("head of empty stream").await
+        "produce a parse exception with the message 'No complete json entity consumed'" >> {
+          Unmarshal(incompleteEntity).to[Foo] must throwA[NoSuchElementException]("No complete json entity consumed").await
         }
       }
 
@@ -185,7 +185,7 @@ object JsonSupportSpec extends Specification with CirceHttpSupport with CirceStr
     if (strict) {
       HttpEntity(`application/json`, s)
     } else {
-      val source = Source.fromIterator(() ⇒ s.grouped(8).map(ByteString(_)))
+      val source = Source.fromIterator(() => s.grouped(8).map(ByteString(_)))
       HttpEntity(`application/json`, s.length.toLong, source)
     }
   }

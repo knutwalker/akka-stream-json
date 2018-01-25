@@ -1,8 +1,8 @@
 lazy val versions = new {
-  val circe      = "0.8.0"
-  val akkaHttp   = "10.0.7"
-  val akka       = "2.4.17"
-  val jawn       = "0.10.4"
+  val circe      = "0.9.0"
+  val akkaHttp   = "10.0.11"
+  val akka       = "2.5.9"
+  val jawn       = "0.11.0"
   val specs2     = "3.8.6"
 }
 

@@ -40,7 +40,7 @@ object Build extends AutoPlugin {
              githubProject := Github("knutwalker", "akka-stream-json"),
             bintrayPackage := "akka-stream-json",
                javaVersion := JavaVersion.Java18,
-        crossScalaVersions := Seq("2.11.8", currentScalaVersion),
+        crossScalaVersions := Seq("2.11.11", currentScalaVersion),
               scalaVersion := currentScalaVersion,
   scalacOptions in Compile += "-Xexperimental",
                  publishTo := { if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value }

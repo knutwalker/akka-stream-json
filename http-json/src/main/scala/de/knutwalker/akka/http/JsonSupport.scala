@@ -73,7 +73,10 @@ object JsonSupport extends JsonSupport {
         }
 
         override def postStop(): Unit = {
-          if (!p.isCompleted) p.failure(new AbruptStageTerminationException(this))
+          if (!p.isCompleted) {
+            p.failure(new AbruptStageTerminationException(this))
+            ()
+          }
         }
 
         setHandler(in, this)

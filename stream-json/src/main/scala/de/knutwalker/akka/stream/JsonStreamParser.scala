@@ -62,12 +62,12 @@ object JsonStreamParser {
   def parse[J: Facade](bytes: ByteString): Try[J] =
     Parser.parseFromByteBuffer(bytes.asByteBuffer)
 
-  private final class ParserLogic[J: Facade](parser: AsyncParser[J], shape: FlowShape[ByteString, J], attributes: Attributes) extends GraphStageLogic(shape) with InHandler with OutHandler {
+  private final class ParserLogic[J: Facade](parser: AsyncParser[J], shape: FlowShape[ByteString, J], attr: Attributes) extends GraphStageLogic(shape) with InHandler with OutHandler {
     private[this] val in      = shape.in
     private[this] val out     = shape.out
     private[this] val scratch = new ArrayBuffer[J](64)
 
-    private[this] lazy val decider = attributes.get[SupervisionStrategy].map(_.decider).getOrElse(Supervision.stoppingDecider)
+    private[this] lazy val decider = attr.get[SupervisionStrategy].map(_.decider).getOrElse(Supervision.stoppingDecider)
 
     setHandlers(in, out, this)
 

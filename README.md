@@ -55,8 +55,8 @@ over rendering, you'll only get an Unmarshaller.
 
 ```
 libraryDependencies ++= List(
-  "de.knutwalker" %% "akka-stream-circe" % "3.4.0",
-  "de.knutwalker" %% "akka-http-circe" % "3.4.0"
+  "de.knutwalker" %% "akka-stream-circe" % "3.5.0",
+  "de.knutwalker" %% "akka-http-circe" % "3.5.0"
 )
 ```
 

@@ -27,7 +27,14 @@ object Build extends AutoPlugin {
   override def trigger = allRequirements
   override def requires = KSbtPlugin
 
-  val currentScalaVersion = "2.12.3"
+  val currentScalaVersion = "2.12.8"
+
+  lazy val pub = Def.taskDyn {
+    if (git.gitCurrentTags.value.isEmpty) 
+      (publishTo in bt)
+    else 
+      (publishTo)
+  }
 
   override lazy val projectSettings = Seq(
            git.baseVersion := "3.5.0",
@@ -38,10 +45,10 @@ object Build extends AutoPlugin {
                  startYear := Some(2015),
              githubProject := Github("knutwalker", "akka-stream-json"),
             bintrayPackage := "akka-stream-json",
-               javaVersion := JavaVersion.Java18,
+               javaVersion := de.knutwalker.sbt.JavaVersion.Java18,
         crossScalaVersions := Seq("2.11.11", currentScalaVersion),
               scalaVersion := currentScalaVersion,
-                 publishTo := { if (git.gitCurrentTags.value.isEmpty) (publishTo in bt).value else publishTo.value },
+                 publishTo := pub.value,
   scalacOptions in Compile := {
     val old = (scalacOptions in Compile).value
     scalaBinaryVersion.value match {
@@ -50,3 +57,4 @@ object Build extends AutoPlugin {
     }
   })
 }
+

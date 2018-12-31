@@ -22,9 +22,8 @@ import akka.stream.scaladsl.{ Flow, Keep, Sink }
 import akka.stream.stage.{ GraphStage, GraphStageLogic, InHandler, OutHandler }
 import akka.stream.{ Attributes, FlowShape, Graph, Inlet, Outlet, Supervision }
 import akka.util.ByteString
-
 import jawn.AsyncParser.ValueStream
-import jawn.{ AsyncParser, Facade, ParseException, Parser }
+import jawn.{ AsyncParser, RawFacade, ParseException, Parser }
 
 import scala.collection.mutable.ArrayBuffer
 import scala.concurrent.Future
@@ -32,37 +31,36 @@ import scala.util.Try
 import scala.util.control.NonFatal
 import java.nio.ByteBuffer
 
-
 object JsonStreamParser {
 
-  def apply[J: Facade]: Graph[FlowShape[ByteString, J], NotUsed] =
+  def apply[J: RawFacade]: Graph[FlowShape[ByteString, J], NotUsed] =
     apply[J](ValueStream)
 
-  def apply[J: Facade](mode: AsyncParser.Mode): Graph[FlowShape[ByteString, J], NotUsed] =
+  def apply[J: RawFacade](mode: AsyncParser.Mode): Graph[FlowShape[ByteString, J], NotUsed] =
     new JsonStreamParser(mode)
 
-  def flow[J: Facade]: Flow[ByteString, J, NotUsed] =
+  def flow[J: RawFacade]: Flow[ByteString, J, NotUsed] =
     Flow.fromGraph(apply[J])
 
-  def flow[J: Facade](mode: AsyncParser.Mode): Flow[ByteString, J, NotUsed] =
+  def flow[J: RawFacade](mode: AsyncParser.Mode): Flow[ByteString, J, NotUsed] =
     Flow.fromGraph(apply[J](mode))
 
-  def head[J: Facade]: Sink[ByteString, Future[J]] =
+  def head[J: RawFacade]: Sink[ByteString, Future[J]] =
     flow.toMat(Sink.head)(Keep.right)
 
-  def head[J: Facade](mode: AsyncParser.Mode): Sink[ByteString, Future[J]] =
+  def head[J: RawFacade](mode: AsyncParser.Mode): Sink[ByteString, Future[J]] =
     flow(mode).toMat(Sink.head)(Keep.right)
 
-  def headOption[J: Facade]: Sink[ByteString, Future[Option[J]]] =
+  def headOption[J: RawFacade]: Sink[ByteString, Future[Option[J]]] =
     flow.toMat(Sink.headOption)(Keep.right)
 
-  def headOption[J: Facade](mode: AsyncParser.Mode): Sink[ByteString, Future[Option[J]]] =
+  def headOption[J: RawFacade](mode: AsyncParser.Mode): Sink[ByteString, Future[Option[J]]] =
     flow(mode).toMat(Sink.headOption)(Keep.right)
 
-  def parse[J: Facade](bytes: ByteString): Try[J] =
+  def parse[J: RawFacade](bytes: ByteString): Try[J] =
     Parser.parseFromByteBuffer(bytes.asByteBuffer)
 
-  private final class ParserLogic[J: Facade](parser: AsyncParser[J], shape: FlowShape[ByteString, J], attr: Attributes) extends GraphStageLogic(shape) with InHandler with OutHandler {
+  private final class ParserLogic[J: RawFacade](parser: AsyncParser[J], shape: FlowShape[ByteString, J], attr: Attributes) extends GraphStageLogic(shape) with InHandler with OutHandler {
     private[this] val in      = shape.in
     private[this] val out     = shape.out
     private[this] val scratch = new ArrayBuffer[J](64)
@@ -129,7 +127,7 @@ object JsonStreamParser {
   }
 }
 
-final class JsonStreamParser[J: Facade] private(mode: AsyncParser.Mode) extends GraphStage[FlowShape[ByteString, J]] {
+final class JsonStreamParser[J: RawFacade] private(mode: AsyncParser.Mode) extends GraphStage[FlowShape[ByteString, J]] {
   private[this] val in    = Inlet[ByteString]("Json.in")
   private[this] val out   = Outlet[J]("Json.out")
   override      val shape = FlowShape(in, out)

@@ -26,7 +26,7 @@ import akka.stream.scaladsl.Sink
 import akka.stream.stage.{ GraphStageLogic, GraphStageWithMaterializedValue, InHandler }
 import akka.stream.{ AbruptStageTerminationException, Attributes, Inlet, SinkShape }
 
-import jawn.Facade
+import jawn.RawFacade
 
 import scala.concurrent.{ Future, Promise }
 import java.util.NoSuchElementException
@@ -89,7 +89,7 @@ object JsonSupport extends JsonSupport {
 
 trait JsonSupport {
 
-  implicit def jsonUnmarshaller[J <: AnyRef : Facade]: FromEntityUnmarshaller[J] =
+  implicit def jsonUnmarshaller[J <: AnyRef : RawFacade]: FromEntityUnmarshaller[J] =
     Unmarshaller.withMaterializer[HttpEntity, J](_ => implicit mat => {
       case HttpEntity.Strict(_, data) => FastFuture(JsonStreamParser.parse[J](data))
       case entity                     => entity.dataBytes.via(JsonStreamParser[J]).runWith(JsonSupport.firstElementSink[J])
